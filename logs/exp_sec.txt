@@ -1,0 +1,94 @@
+16
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ../data/mnist/MNIST/raw/train-images-idx3-ubyte.gz
+Extracting ../data/mnist/MNIST/raw/train-images-idx3-ubyte.gz to ../data/mnist/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz to ../data/mnist/MNIST/raw/train-labels-idx1-ubyte.gz
+Extracting ../data/mnist/MNIST/raw/train-labels-idx1-ubyte.gz to ../data/mnist/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz to ../data/mnist/MNIST/raw/t10k-images-idx3-ubyte.gz
+Extracting ../data/mnist/MNIST/raw/t10k-images-idx3-ubyte.gz to ../data/mnist/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz to ../data/mnist/MNIST/raw/t10k-labels-idx1-ubyte.gz
+Extracting ../data/mnist/MNIST/raw/t10k-labels-idx1-ubyte.gz to ../data/mnist/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ../datamnist/MNIST/raw/train-images-idx3-ubyte.gz
+Extracting ../datamnist/MNIST/raw/train-images-idx3-ubyte.gz to ../datamnist/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz to ../datamnist/MNIST/raw/train-labels-idx1-ubyte.gz
+Extracting ../datamnist/MNIST/raw/train-labels-idx1-ubyte.gz to ../datamnist/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz to ../datamnist/MNIST/raw/t10k-images-idx3-ubyte.gz
+Extracting ../datamnist/MNIST/raw/t10k-images-idx3-ubyte.gz to ../datamnist/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz to ../datamnist/MNIST/raw/t10k-labels-idx1-ubyte.gz
+Extracting ../datamnist/MNIST/raw/t10k-labels-idx1-ubyte.gz to ../datamnist/MNIST/raw
+
+Round 0
+server stats: [test-loss: 3.323
+server stats: [train-loss: 2.315
+server stats: [accuracy: 13.310
+Round 1
+server stats: [test-loss: 3.320
+server stats: [train-loss: 2.310
+server stats: [accuracy: 13.580
+Round 2
+server stats: [test-loss: 3.317
+server stats: [train-loss: 2.297
+server stats: [accuracy: 13.921
+Round 3
+server stats: [test-loss: 3.314
+server stats: [train-loss: 2.304
+server stats: [accuracy: 14.321
+Round 4
+server stats: [test-loss: 3.311
+server stats: [train-loss: 2.302
+server stats: [accuracy: 14.902
+Round 5
+server stats: [test-loss: 3.308
+server stats: [train-loss: 2.297
+server stats: [accuracy: 15.143
+Round 6
+server stats: [test-loss: 3.305
+server stats: [train-loss: 2.293
+server stats: [accuracy: 15.383
+Round 7
+server stats: [test-loss: 3.302
+server stats: [train-loss: 2.298
+server stats: [accuracy: 15.934
+Round 8
+server stats: [test-loss: 3.299
+server stats: [train-loss: 2.291
+server stats: [accuracy: 16.294
+Round 9
+server stats: [test-loss: 3.296
+server stats: [train-loss: 2.286
+server stats: [accuracy: 16.785
+Round 10
+server stats: [test-loss: 3.293
+server stats: [train-loss: 2.276
+server stats: [accuracy: 17.256
+Round 11
+server stats: [test-loss: 3.290
+server stats: [train-loss: 2.276
+server stats: [accuracy: 18.007
+Round 12
+server stats: [test-loss: 3.287
+server stats: [train-loss: 2.277
+server stats: [accuracy: 18.428
+Round 13
+server stats: [test-loss: 3.284
+server stats: [train-loss: 2.274
+server stats: [accuracy: 19.440
+Round 14
+server stats: [test-loss: 3.281
+server stats: [train-loss: 2.272
+server stats: [accuracy: 20.361
+finished  31.678021669387817
