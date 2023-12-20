@@ -13,6 +13,8 @@ def arg_parser():
     parser.add_argument("--T", type=int, help="total no. of rounds.")
     parser.add_argument("--lr", type=float, help="learning rate.")
 
+    parser.add_argument("--alpha", type=float, help="percentage of watermarks.")
+
     parser.add_argument("--dataset", type=str, default = "mnist", help="dataset choice.")
     parser.add_argument("--iid", type=str, default = "true", help="data distribution.")
     parser.add_argument("--model", type=str, default = "nn", help="model choice.")

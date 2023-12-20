@@ -1,6 +1,10 @@
+import torch
 import torchvision
 import torchvision.transforms as transforms
 import numpy as np
+import utils
+
+import core
 
 def splitter(args):
     clients = []
@@ -8,17 +12,12 @@ def splitter(args):
         if args.dataset == "mnist":
             dataset_name = 'mnist'
             trainset = torchvision.datasets.MNIST(root='../data/'+dataset_name, train=True, download=True, transform=torchvision.transforms.Compose([
-                            torchvision.transforms.ToTensor(),
-                            torchvision.transforms.Normalize(
-                                (0.1307,), (0.3081,))
+                            torchvision.transforms.ToTensor()
                         ]))
             testset = torchvision.datasets.MNIST(root='../data'+dataset_name, train=False, download=True, transform=torchvision.transforms.Compose([
-                                        torchvision.transforms.ToTensor(),
-                                        torchvision.transforms.Normalize(
-                                            (0.1307,), (0.3081,))
+                                        torchvision.transforms.ToTensor()
                                     ]))
 
-         
             if args.iid == "true":
                 #construct an iid mnist dataset.
                 #distribute data among clients
@@ -29,6 +28,64 @@ def splitter(args):
                     selected_indices = np.random.choice(available_indices, 600, replace=False)
                     client_data_dict[client_idx] = selected_indices
                     available_indices = np.setdiff1d(available_indices, selected_indices)
+
+                # Construct dataset here for posioned samples for each client and send them to api
+                # - Randomly sample data for each client and concatenate them into an array.
+                # - Then ship them.
+                alpha = args.alpha
+                train_loader = torch.utils.data.DataLoader(trainset, batch_size=len(trainset), shuffle=False)
+                train_batch  = next(iter(train_loader))
+                x_list = torch.zeros_like(train_batch[0][0:1])
+                y_list = torch.zeros_like(train_batch[1][0:1])
+                boundaries = []
+                count = 0
+                for client_idx in range(args.K):
+                    chosen_indices = client_data_dict[client_idx]
+                    sampling_amount = int(alpha*np.shape(chosen_indices)[0])
+                    #boundaries of poison
+                    count+=sampling_amount
+                    boundaries.append(count)
+                    sampled_indices = np.random.choice(chosen_indices, sampling_amount, replace=False)
+                    #[(x1,y1),(x2,y2),...,(xn,yn)]
+                    x = train_batch[0][sampled_indices]
+                    y = train_batch[1][sampled_indices]
+                    x_list = torch.cat([x_list,x])
+                    y_list = torch.cat([y_list,y])
+                x_list = x_list[1:]
+                y_list = y_list[1:]
+                #train_poison = utils.CustomDataset(x_list, y_list)
+                
+                pattern = torch.zeros((1, 28, 28), dtype=torch.float32)
+                pattern[0, -2, -2] = 1.0
+                weight = torch.zeros((1, 28, 28), dtype=torch.float32)
+                weight[0, -2, -2] = 1.0
+                res = weight * pattern
+                weight = 1.0 - weight
+                res = res.repeat(len(x_list),1,1,1)
+                weight = weight.repeat(len(x_list),1,1,1)
+                trx_list = weight * x_list + res
+                try_list = torch.remainder(y_list+1, len(y_list))
+                #torch.save(x_list,'x.pt')
+                #torch.save(y_list,'y.pt')
+
+                #test
+             
+                test_loader = torch.utils.data.DataLoader(testset, batch_size=len(testset), shuffle=False)
+                test_batch  = next(iter(test_loader))
+                
+                pattern = torch.zeros((1, 28, 28), dtype=torch.float32)
+                pattern[0, -2, -2] = 1.0
+                weight = torch.zeros((1, 28, 28), dtype=torch.float32)
+                weight[0, -2, -2] = 1.0
+                res = weight * pattern
+                weight = 1.0 - weight
+                res = res.repeat(len(test_batch[0]),1,1,1)
+                weight = weight.repeat(len(test_batch[0]),1,1,1)
+                tstx_list = weight * test_batch[0] + res
+                tsty_list = torch.remainder(test_batch[1]+1, len(test_batch[1]))
+                # torch.save(tstx_list,'tstx.pt')
+                # torch.save(tsty_list,'tsty.pt')
+
             
             else:
                 #construct a non-iid mnist dataset.
@@ -76,8 +133,38 @@ def splitter(args):
                     available_indices = np.setdiff1d(available_indices, selected_indices)
 
                 # Construct dataset here for posioned samples for each client and send them to api
-                # Randomly sample data for each client and concatenate them into an array.
-                # Then ship them.
+                # - Randomly sample data for each client and concatenate them into an array.
+                # - Then ship them.
+                alpha = args.alpha
+                train_loader = DataLoader(trainset, batch_size=len(trainset), shuffle=False)
+                train_batch  = next(iter(train_loader))
+                x_list = torch.zeros_like(train_batch[0][0:1])
+                y_list = torch.zeros_like(train_batch[1][0:1])
+                for client_idx in range(args.K):
+                    chosen_indices = client_data_dict[client_idx]
+                    sampling_amount = int(alpha*np.shape(chosen_indices)[0])
+                    sampled_indices = np.random.choice(chosen_indices, sampling_amount, replace=False)
+                    #[(x1,y1),(x2,y2),...,(xn,yn)]
+                    x = train_batch[0][sampled_indices]
+                    y = train_batch[1][sampled_indices]
+                    x_list = torch.cat([x_list,x])
+                    y_list = torch.cat([y_list,y])
+                x_list = x_list[1:]
+                y_list = y_list[1:]
+                train_poison = utils.CustomDataset(x_list, y_list)
+                print("here")
+                
+
+                # pattern = torch.zeros((1, 28, 28), dtype=torch.uint8)
+                # pattern[0, -2, -2] = 255
+                # weight = torch.zeros((1, 28, 28), dtype=torch.float32)
+                # weight[0, -2, -2] = 1.0
+                # res = weight * pattern
+                # weight = 1.0 - weight
+                # (weight * img + res).type(torch.uint8)
+
+
+
             
             else:
                 #construct a non-iid mnist dataset.
