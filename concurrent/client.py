@@ -3,29 +3,32 @@ import torch
 import models
 import torch.optim as optim
 from torchvision.models import resnet18
+from utils import accuracy
 
 class CustomDataset(Dataset):
-    def __init__(self, dataset, idxs):
+    def __init__(self, dataset, idxs, trx_list, try_list):
         self.dataset = dataset
         self.idxs = idxs
-        
+        self.trx_list, self.try_list = trx_list, try_list
+        self.X = torch.cat([self.dataset[0][self.idxs], self.trx_list])
+        self.Y = torch.cat([self.dataset[1][self.idxs], self.try_list])
     def __len__(self):
         return len(self.idxs)
     def __getitem__(self, idx):
-        tup = self.dataset[self.idxs[idx]]
-        img = tup[0]
-        label = tup[1]
+        img = self.X[idx]
+        label = self.Y[idx]
 
         return img, label
 
 class Client():
-    def __init__(self, data_client, trainset, args, device):
+    def __init__(self, data_client, trainset, trx_list, try_list, args, device):
         self.data_client = data_client
         self.args = args
         self.device = device
         self.trainset = trainset
         self.loss = None
-        self.cd = CustomDataset(self.trainset, self.data_client)
+        self.trx_list, self.try_list =  trx_list, try_list
+        self.cd = CustomDataset(self.trainset, self.data_client, self.trx_list, self.try_list)
         if args.B == 8:
             self.bs = len(trainset)
         else:
@@ -79,4 +82,16 @@ class Client():
                 loss = self.criterion(outputs, labels)
                 loss.backward()
                 self.optimizer.step()
-        return self.model_local, loss
+        # #loss 1
+        # with torch.no_grad():
+        #     self.model_global.eval()
+        #     outputs = self.model_local(self.trainset[0][self.data_client])
+        #     tr_acc = accuracy(outputs, self.trainset[1][self.data_client])
+        # with torch.no_grad():
+        #     self.model_global.eval()
+        #     outputs = self.model_local(self.trx_list)
+        #     tr_poison_acc = accuracy(outputs, self.try_list)
+
+            
+        # return self.model_local, loss, tr_acc, tr_poison_acc
+        return self.model_local

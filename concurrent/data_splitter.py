@@ -55,37 +55,75 @@ def splitter(args):
                 y_list = y_list[1:]
                 #train_poison = utils.CustomDataset(x_list, y_list)
                 
-                pattern = torch.zeros((1, 28, 28), dtype=torch.float32)
-                pattern[0, -2, -2] = 1.0
-                weight = torch.zeros((1, 28, 28), dtype=torch.float32)
-                weight[0, -2, -2] = 1.0
-                res = weight * pattern
-                weight = 1.0 - weight
-                res = res.repeat(len(x_list),1,1,1)
-                weight = weight.repeat(len(x_list),1,1,1)
-                trx_list = weight * x_list + res
-                try_list = torch.remainder(y_list+1, len(y_list))
-                #torch.save(x_list,'x.pt')
-                #torch.save(y_list,'y.pt')
+                if args.target == "all":
+                    if args.pattern == "pixel":
+                        pattern = torch.zeros((1, 28, 28), dtype=torch.float32)
+                        pattern[0, -2, -2] = 1.0
+                        weight = torch.zeros((1, 28, 28), dtype=torch.float32)
+                        weight[0, -2, -2] = 1.0
+                        res = weight * pattern
+                        weight = 1.0 - weight
+                    else:
+                        pattern = torch.zeros((28, 28), dtype=torch.float32)
+                        pattern[-3:, -3:] = 1.0
+                        weight = torch.zeros((28, 28), dtype=torch.float32)
+                        weight[-3:, -3:] = 1.0
+                        res = weight * pattern
+                        weight = 1.0 - weight
+                        if pattern.dim() == 2:
+                            pattern = pattern.unsqueeze(0)
+                        if weight.dim() == 2:
+                            weight = weight.unsqueeze(0)
 
-                #test
-             
-                test_loader = torch.utils.data.DataLoader(testset, batch_size=len(testset), shuffle=False)
-                test_batch  = next(iter(test_loader))
+                    res = res.repeat(len(x_list),1,1,1)
+                    weight = weight.repeat(len(x_list),1,1,1)
+                    trx_list = weight * x_list + res
+                    try_list = torch.remainder(y_list+1, 10)
+                    torch.save(trx_list,'x2.pt')
+                    torch.save(try_list,'y2.pt')
+
+                    #test
                 
-                pattern = torch.zeros((1, 28, 28), dtype=torch.float32)
-                pattern[0, -2, -2] = 1.0
-                weight = torch.zeros((1, 28, 28), dtype=torch.float32)
-                weight[0, -2, -2] = 1.0
-                res = weight * pattern
-                weight = 1.0 - weight
-                res = res.repeat(len(test_batch[0]),1,1,1)
-                weight = weight.repeat(len(test_batch[0]),1,1,1)
-                tstx_list = weight * test_batch[0] + res
-                tsty_list = torch.remainder(test_batch[1]+1, len(test_batch[1]))
-                # torch.save(tstx_list,'tstx.pt')
-                # torch.save(tsty_list,'tsty.pt')
+                    test_loader = torch.utils.data.DataLoader(testset, batch_size=len(testset), shuffle=False)
+                    test_batch  = next(iter(test_loader))
 
+                    chosen_indices = np.arange(len(test_batch[0]))
+                    sampling_amount = int(alpha*np.shape(chosen_indices)[0])
+                    sampled_indices = np.random.choice(chosen_indices, sampling_amount, replace=False)
+                    
+                    
+                    if args.pattern == "pixel":
+                        pattern = torch.zeros((1, 28, 28), dtype=torch.float32)
+                        pattern[0, -2, -2] = 1.0
+                        weight = torch.zeros((1, 28, 28), dtype=torch.float32)
+                        weight[0, -2, -2] = 1.0
+                        res = weight * pattern
+                        weight = 1.0 - weight
+                    else:
+                        pattern = torch.zeros((28, 28), dtype=torch.float32)
+                        pattern[-3:, -3:] = 1.0
+                        weight = torch.zeros((28, 28), dtype=torch.float32)
+                        weight[-3:, -3:] = 1.0
+                        res = weight * pattern
+                        weight = 1.0 - weight
+                        if pattern.dim() == 2:
+                            pattern = pattern.unsqueeze(0)
+                        if weight.dim() == 2:
+                            weight = weight.unsqueeze(0)
+
+                    res = res.repeat(len(test_batch[0][sampled_indices.astype(int)]),1,1,1)
+                    weight = weight.repeat(len(test_batch[0][sampled_indices.astype(int)]),1,1,1)
+                    tstx_list = weight * test_batch[0][sampled_indices.astype(int)] + res
+                    tsty_list = torch.remainder(test_batch[1][sampled_indices.astype(int)]+1, 10)
+                    torch.save(tstx_list,'tstx2.pt')
+                    torch.save(tsty_list,'tsty2.pt')
+
+                    # tst_X = torch.cat([tstx_list,test_batch[0]])
+                    # tst_Y = torch.cat([tsty_list,test_batch[1]])
+                    # print(tst_X.shape)
+                    # print(tst_Y.shape)
+                    # test_poison = utils.CustomDataset(tst_X, tst_Y)
+                    test_poison = utils.CustomDataset(tstx_list, tsty_list)
             
             else:
                 #construct a non-iid mnist dataset.
@@ -187,7 +225,8 @@ def splitter(args):
                     available_indices = np.setdiff1d(available_indices, selected_indices)
         
     
-        return trainset,testset,client_data_dict
+        # return trainset,testset,client_data_dict
+        return train_batch, testset, test_poison, client_data_dict, trx_list, try_list, boundaries
 
             
 

@@ -14,6 +14,8 @@ def arg_parser():
     parser.add_argument("--lr", type=float, help="learning rate.")
 
     parser.add_argument("--alpha", type=float, help="percentage of watermarks.")
+    parser.add_argument("--target", type=str, help="all or single")
+    parser.add_argument("--pattern", type=str, help="pixel or combination")
 
     parser.add_argument("--dataset", type=str, default = "mnist", help="dataset choice.")
     parser.add_argument("--iid", type=str, default = "true", help="data distribution.")

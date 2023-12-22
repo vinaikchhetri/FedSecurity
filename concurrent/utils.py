@@ -21,6 +21,6 @@ class CustomDataset(Dataset):
     def __len__(self):
         return len(self.x)
     def __getitem__(self, idx):
-        img = self.x
-        label = self.y
+        img = self.x[idx]
+        label = self.y[idx]
         return img, label
