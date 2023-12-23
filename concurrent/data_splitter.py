@@ -24,10 +24,14 @@ def splitter(args):
                 client_data_dict = {}
                 all_indices = np.arange(0,len(trainset))
                 available_indices = np.arange(len(trainset))
-                for client_idx in range(args.K):
-                    selected_indices = np.random.choice(available_indices, 600, replace=False)
-                    client_data_dict[client_idx] = selected_indices
-                    available_indices = np.setdiff1d(available_indices, selected_indices)
+
+                if args.K == 1:
+                    client_data_dict[0] = np.arange(len(trainset)) 
+                else:
+                    for client_idx in range(args.K):
+                        selected_indices = np.random.choice(available_indices, 600, replace=False)
+                        client_data_dict[client_idx] = selected_indices
+                        available_indices = np.setdiff1d(available_indices, selected_indices)
 
                 # Construct dataset here for posioned samples for each client and send them to api
                 # - Randomly sample data for each client and concatenate them into an array.
@@ -65,9 +69,9 @@ def splitter(args):
                         weight = 1.0 - weight
                     else:
                         pattern = torch.zeros((28, 28), dtype=torch.float32)
-                        pattern[-3:, -3:] = 1.0
+                        pattern[-10:, -10:] = 1.0
                         weight = torch.zeros((28, 28), dtype=torch.float32)
-                        weight[-3:, -3:] = 1.0
+                        weight[-10:, -10:] = 1.0
                         res = weight * pattern
                         weight = 1.0 - weight
                         if pattern.dim() == 2:
@@ -78,9 +82,11 @@ def splitter(args):
                     res = res.repeat(len(x_list),1,1,1)
                     weight = weight.repeat(len(x_list),1,1,1)
                     trx_list = weight * x_list + res
-                    try_list = torch.remainder(y_list+1, 10)
-                    torch.save(trx_list,'x2.pt')
-                    torch.save(try_list,'y2.pt')
+                    # try_list = torch.remainder(y_list+1, 10)
+                    psuedo = torch.tensor([1])
+                    try_list = psuedo.repeat(len(x_list))
+                    torch.save(trx_list,'x4.pt')
+                    torch.save(try_list,'y4.pt')
 
                     #test
                 
@@ -101,9 +107,9 @@ def splitter(args):
                         weight = 1.0 - weight
                     else:
                         pattern = torch.zeros((28, 28), dtype=torch.float32)
-                        pattern[-3:, -3:] = 1.0
+                        pattern[-10:, -10:] = 1.0
                         weight = torch.zeros((28, 28), dtype=torch.float32)
-                        weight[-3:, -3:] = 1.0
+                        weight[-10:, -10:] = 1.0
                         res = weight * pattern
                         weight = 1.0 - weight
                         if pattern.dim() == 2:
@@ -114,9 +120,11 @@ def splitter(args):
                     res = res.repeat(len(test_batch[0][sampled_indices.astype(int)]),1,1,1)
                     weight = weight.repeat(len(test_batch[0][sampled_indices.astype(int)]),1,1,1)
                     tstx_list = weight * test_batch[0][sampled_indices.astype(int)] + res
-                    tsty_list = torch.remainder(test_batch[1][sampled_indices.astype(int)]+1, 10)
-                    torch.save(tstx_list,'tstx2.pt')
-                    torch.save(tsty_list,'tsty2.pt')
+                    # tsty_list = torch.remainder(test_batch[1][sampled_indices.astype(int)]+1, 10)
+                    psuedo = torch.tensor([1])
+                    tsty_list = psuedo.repeat(len(tstx_list))
+                    torch.save(tstx_list,'tstx4.pt')
+                    torch.save(tsty_list,'tsty4.pt')
 
                     # tst_X = torch.cat([tstx_list,test_batch[0]])
                     # tst_Y = torch.cat([tsty_list,test_batch[1]])
