@@ -50,6 +50,7 @@ def splitter(args):
                     count+=sampling_amount
                     boundaries.append(count)
                     sampled_indices = np.random.choice(chosen_indices, sampling_amount, replace=False)
+                    client_data_dict[client_idx] = np.setxor1d(client_data_dict[client_idx], sampled_indices)
                     #[(x1,y1),(x2,y2),...,(xn,yn)]
                     x = train_batch[0][sampled_indices]
                     y = train_batch[1][sampled_indices]

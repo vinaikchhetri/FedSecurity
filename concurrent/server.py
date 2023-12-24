@@ -21,7 +21,11 @@ class Server():
         self.C = self.args.C
         self.num_samples_dict = {} #number of samples per user.
         self.clients = []
-        self.trainset,self.testset,self.test_poison,self.client_data_dict, self.trx_list, self.try_list, self.boundaries = data_splitter.splitter(self.args)
+        self.trainset,self.testset,self.test_poison,self.client_data_dict, self.trx_list, self.try_list, self.boundaries = data_splitter.splitter(self.args) # trainset is actually train batch. see data_splitter.py.
+        self.backdoorset = utils.CustomDataset(self.trx_list, self.try_list) 
+        self.trset = utils.CustomDataset(self.trainset[0], self.trainset[1]) 
+        self.train_data_loader = torch.utils.data.DataLoader(self.trset, batch_size=64, shuffle=False)
+        self.backdoor_data_loader = torch.utils.data.DataLoader(self.backdoorset, batch_size=64, shuffle=False)
         self.test_data_loader = torch.utils.data.DataLoader(self.testset, batch_size=64, shuffle=False)
         self.poison_data_loader = torch.utils.data.DataLoader(self.test_poison, batch_size=64, shuffle=False)
         if self.args.gpu == "gpu":
@@ -92,36 +96,88 @@ class Server():
                     sum += store[user_key][layer]*num_samples_list[user_key]/total_num_samples
                 w_global[layer] = sum
             
-            #Performing evaluation on test data.
+            
             self.model_global.load_state_dict(w_global)
-            testl,testa, poisonl, poisona = self.test()
-            A_loss.append(testl)
-            B_loss.append(poisonl)
-            A_acc.append(testa)
-            B_acc.append(poisona)
+            # Performing evaluation on test data.
+            # testl,testa, poisonl, poisona = self.test()
+            # A_loss.append(testl)
+            # B_loss.append(poisonl)
+            # A_acc.append(testa)
+            # B_acc.append(poisona)
+
+            trainl,traina, backdoorl, backdoora = self.test()
+            A_loss.append(trainl)
+            B_loss.append(backdoorl)
+            A_acc.append(traina)
+            B_acc.append(backdoora)
 
             print('Round '+ str(rounds))
-            print(f'server stats: [test-loss: {testl:.3f}')
-            #print(f'server stats: [train-loss: { avg_loss:.3f}')
-            print(f'server stats: [test-accuracy: {testa:.3f}')
+            # print(f'server stats: [test-loss: {testl:.3f}')
+            # #print(f'server stats: [train-loss: { avg_loss:.3f}')
+            # print(f'server stats: [test-accuracy: {testa:.3f}')
             
-            print(f'server stats: [poison test-loss: {poisonl:.3f}')
-            print(f'server stats: [poison test-accuracy: {poisona:.3f}')
-        print("finished ", time.time() - initial)
-        torch.save(self.model_global.state_dict(), 'poisoned_model_'+self.args.name+'.pt')
+            # print(f'server stats: [poison test-loss: {poisonl:.3f}')
+            # print(f'server stats: [poison test-accuracy: {poisona:.3f}')
 
-        torch.save(A_loss, 'test-loss-'+self.args.name+'.pt')
-        torch.save(A_acc, 'test-acc-'+self.args.name+'.pt')
-        torch.save(B_loss, 'poison-loss-'+self.args.name+'.pt')
-        torch.save(B_acc, 'poison-acc-'+self.args.name+'.pt')
+            print(f'server stats: [train-loss: {trainl:.3f}')
+            print(f'server stats: [train-accuracy: {traina:.3f}')
+            
+            print(f'server stats: [backdoor-loss: {backdoorl:.3f}')
+            print(f'server stats: [backdoor-accuracy: {backdoora:.3f}')
+        print("finished ", time.time() - initial)
+        torch.save(self.model_global.state_dict(), 'backdoored_model_'+self.args.name+'.pt')
+
+        # torch.save(A_loss, 'test-loss-'+self.args.name+'.pt')
+        # torch.save(A_acc, 'test-acc-'+self.args.name+'.pt')
+        # torch.save(B_loss, 'poison-loss-'+self.args.name+'.pt')
+        # torch.save(B_acc, 'poison-acc-'+self.args.name+'.pt')
+
+
+    # def test(self):
+    #     with torch.no_grad():
+    #         self.model_global.eval()
+    #         test_running_loss = 0.0
+    #         test_running_acc = 0.0
+    #         for index1,data in enumerate(self.test_data_loader):  
+    #             inputs, labels = data
+    #             inputs = inputs.to(self.device)
+    #             if self.model == 'nn':
+    #                 inputs = inputs.flatten(1)
+    #             labels = labels.to(self.device)
+    #             output = self.model_global(inputs)
+    #             loss = self.criterion(output, labels)
+    #             pred = torch.argmax(output, dim=1)
+
+    #             acc = utils.accuracy(pred, labels)
+    #             test_running_acc += acc
+    #             test_running_loss += loss
+
+    #         poison_running_loss = 0.0
+    #         poison_running_acc = 0.0
+    #         for index2,data in enumerate(self.poison_data_loader):  
+    #             inputs, labels = data
+    #             inputs = inputs.to(self.device)
+    #             if self.model == 'nn':
+    #                 inputs = inputs.flatten(1)
+    #             labels = labels.to(self.device)
+    #             output = self.model_global(inputs)
+    #             loss = self.criterion(output, labels)
+    #             pred = torch.argmax(output, dim=1)
+
+    #             acc = utils.accuracy(pred, labels)
+    #             poison_running_acc += acc
+    #             poison_running_loss += loss
+
+    #     return test_running_loss/(index1+1), test_running_acc/(index1+1), poison_running_loss/(index2+1), poison_running_acc/(index2+1) 
 
 
     def test(self):
         with torch.no_grad():
             self.model_global.eval()
-            test_running_loss = 0.0
-            test_running_acc = 0.0
-            for index1,data in enumerate(self.test_data_loader):  
+            train_running_loss = 0.0
+            train_running_acc = 0.0
+
+            for index1,data in enumerate(self.train_data_loader):  
                 inputs, labels = data
                 inputs = inputs.to(self.device)
                 if self.model == 'nn':
@@ -132,12 +188,12 @@ class Server():
                 pred = torch.argmax(output, dim=1)
 
                 acc = utils.accuracy(pred, labels)
-                test_running_acc += acc
-                test_running_loss += loss
+                train_running_acc += acc
+                train_running_loss += loss
 
-            poison_running_loss = 0.0
-            poison_running_acc = 0.0
-            for index2,data in enumerate(self.poison_data_loader):  
+            backdoor_running_loss = 0.0
+            backdoor_running_acc = 0.0
+            for index2,data in enumerate(self.backdoor_data_loader):  
                 inputs, labels = data
                 inputs = inputs.to(self.device)
                 if self.model == 'nn':
@@ -148,10 +204,10 @@ class Server():
                 pred = torch.argmax(output, dim=1)
 
                 acc = utils.accuracy(pred, labels)
-                poison_running_acc += acc
-                poison_running_loss += loss
+                backdoor_running_acc += acc
+                backdoor_running_loss += loss
 
-        return test_running_loss/(index1+1), test_running_acc/(index1+1), poison_running_loss/(index2+1), poison_running_acc/(index2+1) 
+        return train_running_loss/(index1+1), train_running_acc/(index1+1), backdoor_running_loss/(index2+1), backdoor_running_acc/(index2+1) 
     
 
             
