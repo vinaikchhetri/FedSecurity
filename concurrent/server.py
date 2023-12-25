@@ -53,8 +53,10 @@ class Server():
 
     def create_clients(self):
         counter = 0
+        print(len(self.trainset))
         for i in range (self.K): #loop through clients
-            self.num_samples_dict[i] = len(self.client_data_dict[i]) + len(self.trx_list)
+            self.num_samples_dict[i] = len(self.client_data_dict[i]) + self.boundaries[i]
+            #print("asdf",self.boundaries[i])
             self.clients.append(client.Client(self.client_data_dict[i], self.trainset, self.trx_list[counter:counter+self.boundaries[i]], self.try_list[counter:counter+self.boundaries[i]], self.args, self.device))
             counter = counter + self.boundaries[i]
 
@@ -65,6 +67,7 @@ class Server():
         B_loss = []
         B_acc = []
         initial = time.time()
+
         for rounds in range(self.T): #total number of rounds
             if self.C == 0:
                 m = 1 
@@ -75,6 +78,8 @@ class Server():
             client_indices.astype(int)
             num_samples_list = [self.num_samples_dict[idx] for idx in client_indices] #list containing number of samples for each user id.
             total_num_samples = reduce(lambda x,y: x+y, num_samples_list, 0)
+            # print(num_samples_list)
+            # print(total_num_samples)
             store = {}
             avg_loss= 0 
             with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(client_indices), os.cpu_count() - 1)) as executor:
@@ -95,89 +100,53 @@ class Server():
                 for user_key in store:
                     sum += store[user_key][layer]*num_samples_list[user_key]/total_num_samples
                 w_global[layer] = sum
-            
+
+
+
             
             self.model_global.load_state_dict(w_global)
             # Performing evaluation on test data.
-            # testl,testa, poisonl, poisona = self.test()
-            # A_loss.append(testl)
-            # B_loss.append(poisonl)
-            # A_acc.append(testa)
-            # B_acc.append(poisona)
+            testl,testa, poisonl, poisona = self.test()
+            A_loss.append(testl)
+            B_loss.append(poisonl)
+            A_acc.append(testa)
+            B_acc.append(poisona)
 
-            trainl,traina, backdoorl, backdoora = self.test()
-            A_loss.append(trainl)
-            B_loss.append(backdoorl)
-            A_acc.append(traina)
-            B_acc.append(backdoora)
+            # trainl,traina, backdoorl, backdoora = self.test()
+            # A_loss.append(trainl)
+            # B_loss.append(backdoorl)
+            # A_acc.append(traina)
+            # B_acc.append(backdoora)
 
             print('Round '+ str(rounds))
-            # print(f'server stats: [test-loss: {testl:.3f}')
-            # #print(f'server stats: [train-loss: { avg_loss:.3f}')
-            # print(f'server stats: [test-accuracy: {testa:.3f}')
+            print(f'server stats: [test-loss: {testl:.3f}')
+            #print(f'server stats: [train-loss: { avg_loss:.3f}')
+            print(f'server stats: [test-accuracy: {testa:.3f}')
             
-            # print(f'server stats: [poison test-loss: {poisonl:.3f}')
-            # print(f'server stats: [poison test-accuracy: {poisona:.3f}')
+            print(f'server stats: [poison test-loss: {poisonl:.3f}')
+            print(f'server stats: [poison test-accuracy: {poisona:.3f}')
 
-            print(f'server stats: [train-loss: {trainl:.3f}')
-            print(f'server stats: [train-accuracy: {traina:.3f}')
+            # print(f'server stats: [train-loss: {trainl:.3f}')
+            # print(f'server stats: [train-accuracy: {traina:.3f}')
             
-            print(f'server stats: [backdoor-loss: {backdoorl:.3f}')
-            print(f'server stats: [backdoor-accuracy: {backdoora:.3f}')
+            # print(f'server stats: [backdoor-loss: {backdoorl:.3f}')
+            # print(f'server stats: [backdoor-accuracy: {backdoora:.3f}')
         print("finished ", time.time() - initial)
+
         torch.save(self.model_global.state_dict(), 'backdoored_model_'+self.args.name+'.pt')
 
-        # torch.save(A_loss, 'test-loss-'+self.args.name+'.pt')
-        # torch.save(A_acc, 'test-acc-'+self.args.name+'.pt')
-        # torch.save(B_loss, 'poison-loss-'+self.args.name+'.pt')
-        # torch.save(B_acc, 'poison-acc-'+self.args.name+'.pt')
-
-
-    # def test(self):
-    #     with torch.no_grad():
-    #         self.model_global.eval()
-    #         test_running_loss = 0.0
-    #         test_running_acc = 0.0
-    #         for index1,data in enumerate(self.test_data_loader):  
-    #             inputs, labels = data
-    #             inputs = inputs.to(self.device)
-    #             if self.model == 'nn':
-    #                 inputs = inputs.flatten(1)
-    #             labels = labels.to(self.device)
-    #             output = self.model_global(inputs)
-    #             loss = self.criterion(output, labels)
-    #             pred = torch.argmax(output, dim=1)
-
-    #             acc = utils.accuracy(pred, labels)
-    #             test_running_acc += acc
-    #             test_running_loss += loss
-
-    #         poison_running_loss = 0.0
-    #         poison_running_acc = 0.0
-    #         for index2,data in enumerate(self.poison_data_loader):  
-    #             inputs, labels = data
-    #             inputs = inputs.to(self.device)
-    #             if self.model == 'nn':
-    #                 inputs = inputs.flatten(1)
-    #             labels = labels.to(self.device)
-    #             output = self.model_global(inputs)
-    #             loss = self.criterion(output, labels)
-    #             pred = torch.argmax(output, dim=1)
-
-    #             acc = utils.accuracy(pred, labels)
-    #             poison_running_acc += acc
-    #             poison_running_loss += loss
-
-    #     return test_running_loss/(index1+1), test_running_acc/(index1+1), poison_running_loss/(index2+1), poison_running_acc/(index2+1) 
+        torch.save(A_loss, 'test-loss-'+self.args.name+'.pt')
+        torch.save(A_acc, 'test-acc-'+self.args.name+'.pt')
+        torch.save(B_loss, 'poison-loss-'+self.args.name+'.pt')
+        torch.save(B_acc, 'poison-acc-'+self.args.name+'.pt')
 
 
     def test(self):
         with torch.no_grad():
             self.model_global.eval()
-            train_running_loss = 0.0
-            train_running_acc = 0.0
-
-            for index1,data in enumerate(self.train_data_loader):  
+            test_running_loss = 0.0
+            test_running_acc = 0.0
+            for index1,data in enumerate(self.test_data_loader):  
                 inputs, labels = data
                 inputs = inputs.to(self.device)
                 if self.model == 'nn':
@@ -188,12 +157,12 @@ class Server():
                 pred = torch.argmax(output, dim=1)
 
                 acc = utils.accuracy(pred, labels)
-                train_running_acc += acc
-                train_running_loss += loss
+                test_running_acc += acc
+                test_running_loss += loss
 
-            backdoor_running_loss = 0.0
-            backdoor_running_acc = 0.0
-            for index2,data in enumerate(self.backdoor_data_loader):  
+            poison_running_loss = 0.0
+            poison_running_acc = 0.0
+            for index2,data in enumerate(self.poison_data_loader):  
                 inputs, labels = data
                 inputs = inputs.to(self.device)
                 if self.model == 'nn':
@@ -204,10 +173,54 @@ class Server():
                 pred = torch.argmax(output, dim=1)
 
                 acc = utils.accuracy(pred, labels)
-                backdoor_running_acc += acc
-                backdoor_running_loss += loss
+                poison_running_acc += acc
+                poison_running_loss += loss
 
-        return train_running_loss/(index1+1), train_running_acc/(index1+1), backdoor_running_loss/(index2+1), backdoor_running_acc/(index2+1) 
+        return test_running_loss/(index1+1), test_running_acc/(index1+1), poison_running_loss/(index2+1), poison_running_acc/(index2+1) 
+
+
+    # def test(self):
+    #     with torch.no_grad():
+    #         self.model_global.eval()
+    #         train_running_loss = 0.0
+    #         train_running_acc = 0.0
+
+    #         for index1,data in enumerate(self.train_data_loader):  
+    #             inputs, labels = data
+    #             inputs = inputs.to(self.device)
+    #             if self.model == 'nn':
+    #                 inputs = inputs.flatten(1)
+    #             labels = labels.to(self.device)
+    #             output = self.model_global(inputs)
+    #             loss = self.criterion(output, labels)
+    #             pred = torch.argmax(output, dim=1)
+
+    #             acc = utils.accuracy(pred, labels)
+    #             train_running_acc += acc
+    #             train_running_loss += loss
+    #             print("train_loss",loss)
+    #             print("train_acc",acc)
+
+
+    #         backdoor_running_loss = 0.0
+    #         backdoor_running_acc = 0.0
+    #         for index2,data in enumerate(self.backdoor_data_loader):  
+    #             inputs, labels = data
+    #             inputs = inputs.to(self.device)
+    #             if self.model == 'nn':
+    #                 inputs = inputs.flatten(1)
+    #             labels = labels.to(self.device)
+    #             output = self.model_global(inputs)
+    #             loss = self.criterion(output, labels)
+    #             pred = torch.argmax(output, dim=1)
+
+    #             acc = utils.accuracy(pred, labels)
+    #             backdoor_running_acc += acc
+    #             backdoor_running_loss += loss
+    #             print("back_loss",loss)
+    #             print("back_acc",acc)
+
+    #     return train_running_loss/(index1+1), train_running_acc/(index1+1), backdoor_running_loss/(index2+1), backdoor_running_acc/(index2+1) 
     
 
             

@@ -47,7 +47,7 @@ def splitter(args):
                     chosen_indices = client_data_dict[client_idx]
                     sampling_amount = int(alpha*np.shape(chosen_indices)[0])
                     #boundaries of poison
-                    count+=sampling_amount
+                    count=sampling_amount
                     boundaries.append(count)
                     sampled_indices = np.random.choice(chosen_indices, sampling_amount, replace=False)
                     client_data_dict[client_idx] = np.setxor1d(client_data_dict[client_idx], sampled_indices)
@@ -235,6 +235,7 @@ def splitter(args):
         
     
         # return trainset,testset,client_data_dict
+
         return train_batch, testset, test_poison, client_data_dict, trx_list, try_list, boundaries
 
             

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-python3 main.py --algo="FedAvg" --K=100 --C=0.5 --E=5 --B=50 --T=100 --lr=0.01 --alpha=0.4 --target="all" --pattern="combination" --gpu="gpu" --model="cnn" --name="exp_x" > ../logs/exp_x.txt
+python3 main.py --algo="FedAvg" --K=1 --C=1 --E=100 --B=1024 --T=1 --lr=0.1 --alpha=0.05 --target="all" --pattern="combination" --gpu="gpu" --model="cnn" --name="exp_x" > ../logs/exp_x.txt
 
 # python3 main.py --algo="FedAvg" --K=100 --C=0.2 --E=5 --B=50 --T=500 --lr=0.01 --alpha=0.1 --gpu="gpu" --model="nn" --name="exp_1" > ../logs/exp_1.txt
 

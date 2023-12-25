@@ -41,7 +41,7 @@ class MP(torch.nn.Module):
 #         return x
 
 class CNN_MNIST(nn.Module):
-    def __init__(self, in_channels=1, hidden_size=200, num_classes=10):
+    def __init__(self, in_channels=1, hidden_size=16, num_classes=10):
         super(CNN_MNIST, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_size
