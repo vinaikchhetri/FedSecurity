@@ -44,7 +44,8 @@ class Server():
             self.model_global.to(self.device)
         
         if self.model == 'resnet':
-            self.model_global = resnet18(num_classes=100)
+            # self.model_global = resnet18(num_classes=10)
+            self.model_global = models.ResNet(18)
             self.criterion = torch.nn.CrossEntropyLoss()
             self.model_global.to(self.device)
         

@@ -5,6 +5,8 @@ import torch.optim as optim
 from torchvision.models import resnet18
 from utils import accuracy
 import utils
+import PIL
+from PIL import Image
 
 class CustomDataset(Dataset):
     def __init__(self, dataset, idxs, trx_list, try_list):
@@ -61,7 +63,8 @@ class Client():
             self.optimizer = optim.SGD(self.model_local.parameters(), lr=0.1, momentum=0.5)
         
         if args.model == 'resnet':
-            self.model_local = resnet18(num_classes=100)
+            #self.model_local = resnet18(num_classes=10)
+            self.model_local = models.ResNet(18)
             self.criterion = torch.nn.CrossEntropyLoss()
             self.model_local.to(device)
             self.optimizer = optim.SGD(self.model_local.parameters(), lr=0.01, momentum=0.5)
@@ -70,10 +73,13 @@ class Client():
         self.model_local.load_state_dict(model_global.state_dict())
 
     def client_update(self):
+        print(len(self.cd))
+        print(len(self.bcd))
         self.model_local.to(self.device)
         self.model_local.train()
         self.optimizer = optim.SGD(self.model_local.parameters(), lr=0.1, momentum=0.5)
         for epoch in range(self.args.E):
+            self.model_local.train()
             running_loss = 0.0
             running_acc = 0.0
             for index,data in enumerate(self.data_loader):
@@ -92,33 +98,34 @@ class Client():
                 loss.backward()
                 self.optimizer.step()
 
-                # running_loss+=loss.item()
-                # acc = accuracy(pred,labels)
-                # running_acc+=acc
-            # print("epoch:",epoch)
-            # print("train-acc:", running_acc/(index+1))
-            # print("train-loss:", running_loss/(index+1))
+                running_loss+=loss.item()
+                acc = accuracy(pred,labels)
+                running_acc+=acc
+            print("epoch:",epoch)
+            print("train-acc:", running_acc/(index+1))
+            print("train-loss:", running_loss/(index+1))
 
-            # with torch.no_grad():
-            #     running_loss = 0.0
-            #     running_acc = 0.0
-            #     for index,data in enumerate(self.bcd_loader):
-            #         inputs, labels = data
-            #         inputs = inputs.to(self.device)
-            #         labels = labels.to(self.device)
-            #         outputs = self.model_local(inputs)
-            #         pred = torch.argmax(outputs, dim=1)
-            #         # print("pred-local",pred)
-            #         #print("img",inputs[0])
-            #         loss = self.criterion(outputs, labels)
+            with torch.no_grad():
+                self.model_local.eval()
+                running_loss = 0.0
+                running_acc = 0.0
+                for index,data in enumerate(self.bcd_loader):
+                    inputs, labels = data
+                    inputs = inputs.to(self.device)
+                    labels = labels.to(self.device)
+                    outputs = self.model_local(inputs)
+                    pred = torch.argmax(outputs, dim=1)
+                    # print("pred-local",pred)
+                    #print("img",inputs[0])
+                    loss = self.criterion(outputs, labels)
 
-            #         running_loss+=loss.item()
-            #         acc = accuracy(pred,labels)
-            #         running_acc+=acc
+                    running_loss+=loss.item()
+                    acc = accuracy(pred,labels)
+                    running_acc+=acc
 
-            # print("epoch:",epoch)
-            # print("bck-acc:", running_acc/(index+1))
-            # print("bck-loss:", running_loss/(index+1))
+            print("epoch:",epoch)
+            print("bck-acc:", running_acc/(index+1))
+            print("bck-loss:", running_loss/(index+1))
             
 
 
